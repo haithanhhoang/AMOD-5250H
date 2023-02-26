@@ -1,0 +1,436 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+##Synopsis
+In this report we aim to explore the U.S. National Oceanic and Atmospheric Administration’s (NOAA) Storm Database and answer some basic questions about severe weather events, in particulary these two:
+
+- Which types of events are most harmful with respect to population health?
+- Which types of events have the greatest economic consequences?
+
+The NOAA database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage and the events in the database start in the year 1950.
+
+
+## Library loading and setting parameters
+```{r}
+library(knitr)
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(R.utils)
+library(stringdist)
+library(gridExtra) 
+library(grid)
+library(ggtext)
+library(ggforce)
+
+opts_chunk$set(echo = TRUE,cache =TRUE)
+options("scipen"=5, "digits"=4)
+```
+## Load database
+```{r}
+# Check if the file exist or downloading the file
+url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+dest_file = "storms_data.csv.bz2"
+csv_file = "storms_data.csv"
+if (!file.exists(dest_file)){
+        download.file(url, dest_file)
+        bunzip2(dest_file, csv_file,remove = F)
+}
+# Read the data
+storms = fread(csv_file,
+               sep = ",",
+               header = T,
+               showProgress = F)
+```
+
+
+
+```{r}
+storms$BGN_DATE = as.POSIXct(storms$BGN_DATE, format="%m/%d/%Y %H:%M:%S")
+storms = storms %>% 
+        filter(BGN_DATE >= as.POSIXct('1/1/1996', format="%m/%d/%Y"))
+```
+```{r}
+storms = storms %>%
+        select(COUNTY,
+               COUNTYNAME, 
+               STATE, 
+               BGN_DATE,
+               EVTYPE, 
+               FATALITIES, 
+               INJURIES, 
+               PROPDMG, 
+               PROPDMGEXP, 
+               CROPDMG, 
+               CROPDMGEXP, 
+               REFNUM)
+```
+
+```{r}
+storms[storms$EVTYPE %like% "HURRICANE"] %>%
+        select(EVTYPE) %>%
+        table()
+```
+
+```{r}
+# Set toupper all the events
+storms = storms %>% mutate(EVTYPE = toupper(EVTYPE))
+
+events <- storms$EVTYPE
+# Replace special char with space as initial clean up
+events <- gsub("( ){1,}"," ", gsub("[^A-Z0-9 ]"," ", events))
+
+# Divide the cleaning by the events
+## FLOOD related events
+events[grepl("COASTAL|STORM SURGE", events)] <- "COASTAL FLOOD"
+events[grepl("FLASH", events)] <- "FLASH FLOOD"
+events[!grepl("FLASH|COASTAL", events) & grepl("FLOOD", events)] <- "FLOOD"
+events[grepl("STREAM|URBAN", events)] <- "FLOOD"
+
+## HEAT related events
+events[grepl("HEAT|DRY", events)] <- "EXCESSIVE HEAT"
+events[grepl("HOT|WARM", events)] <- "EXCESSIVE HEAT"
+events[grepl("RECORD (HIGH|.*TEMP)|HIGH TEMPERA", events)] <- "EXCESSIVE HEAT"
+
+## COLD related events
+events[grepl("SLEET", events)] <- "SLEET"
+events[grepl("BLIZZARD", events)] <- "BLIZZARD"
+events[grepl("EXTREME", events) & grepl("CHILL|COLD", events)] <- "EXTREME COLD/WIND CHILL"
+events[!grepl("EXTREME", events) & grepl("CHILL|COLD", events)] <- "COLD/WIND CHILL"
+events[grepl("LAKE", events) & grepl("SNOW", events)] <- "LAKE-EFFECT SNOW"
+events[!grepl("LAKE", events) & grepl("SNOW", events)] <- "HEAVY SNOW"
+events[grepl("FROST|FREEZE", events)] <- "FROST/FREEZE"
+events[!grepl("FROST", events) & grepl("FREEZE", events)] <- "SLEET"
+events[grepl("FREEZ", events) & grepl("RAIN", events)] <- "SLEET"
+events[grepl("DRIZZLE", events)] <- "SLEET"
+events[grepl("(RECORD LOW|LOW TEMP)", events)] <- "EXTREME COLD/WIND CHILL"
+events[grepl("GLAZE", events)] <- "EXTREME COLD/WIND CHILL"
+events[grepl("ICE", events)] <- "ICE STORM"
+events[grepl("WINT", events)] <- "WINTER STORM"
+events[grepl("HAIL", events)] <- "HAIL"
+
+## WIND, RAIN and LIGHTING related events
+events <- gsub("WINDS", "WIND", events)
+events[!grepl("DERSTORM WIND", events) & grepl("THUN|TSTM", events)] <- "LIGHTNING"
+events[grepl("LIGHT|LIGN", events)] <- "LIGHTNING"
+events[grepl("DERSTORM WIND", events)] <- "THUNDERSTORM WIND"
+events[grepl("TORN", events)] <- "TORNADO"
+events[grepl("SPOUT", events)] <- "WATERSPOUT"
+events[grepl("HURRICANE|TYPHOON", events)] <- "HURRICANE (TYPHOON)"
+events[grepl("FIRE", events)] <- "WILDFIRE"
+events[!grepl("MARINE", events) & grepl("HIGH WIND", events)] <- "HIGH WIND"
+events[grepl("GUST", events)] <- "STRONG WIND"
+events[!grepl("COLD|MARINE|THUNDER|STRONG|HIGH", events) & grepl("WIND", events)] <- "STRONG WIND"
+events[grepl("FUNNEL", events)] <- "FUNNEL CLOUD"
+events[grepl("TROPICAL STORM", events)] <- "TROPICAL STORM"
+events[!grepl("FREEZIN", events) & grepl("FOG|VOG", events)] <- "DENSE FOG"
+events[grepl("WET|RAIN|SHOWER|PRECIP", events)] <- "HEAVY RAIN"
+
+## DUST related events
+events[grepl("DUST DEVEL", events)] <- "DUST DEVIL"
+events[!grepl("DEVIL", events) & grepl("DUST", events)] <- "DUST STORM"
+
+## MARINE EVENTS
+events[grepl("RIP CURRENT", events)] <- "RIP CURRENT"
+events[!grepl("LOW", events) & grepl("TIDE|WAVE|SWELL", events)] <- "STORM SURGE/TIDE"
+events[grepl("SURF", events)] <- "HIGH SURF"
+
+## MISC events
+events[grepl("VOLCAN", events)] <- "VOLCANIC ASH"
+
+# Not a storm, but is there, so we will classify it
+events[grepl("(MUD|LAND|ROCK).*SLIDE", events)] <- "LANDSLIDE"
+
+# All the SUMMARY
+events[grepl("SUMMARY", events)] <- "OTHER/UNKOWN"
+
+# re-assign the cleaned up column values
+storms$EVTYPE <- events
+```
+
+```{r}
+symbol_to_num = function(symbol){
+        if(symbol=="K"){
+                num=1000
+        }
+        if(symbol=="" | symbol=="0"){
+                num=1
+        }
+        if(symbol=="M"){
+                num=1000000
+        }
+        if(symbol=="B"){
+                num=1000000000
+        }
+        num
+}
+
+# CROP exp
+storms[, CROPDMGEXPNUM:=symbol_to_num(CROPDMGEXP), by = 1:nrow(storms)]
+# PROP exp
+storms[, PROPDMGEXPNUM:=symbol_to_num(PROPDMGEXP), by = 1:nrow(storms)]
+```
+
+```{r}
+# CROP
+storms[, CROPDMG:=CROPDMG*CROPDMGEXPNUM ]
+#PROP
+storms[, PROPDMG:=PROPDMG*PROPDMGEXPNUM ]
+```
+```{r}
+storms
+```
+```{r}
+sum_storms_injuries = storms %>%
+        group_by(EVTYPE) %>%
+        summarise(TOTINJURIES = sum(INJURIES),
+                  TOTFATALITIES = sum(FATALITIES)) %>%
+        arrange(-TOTINJURIES, -TOTFATALITIES) %>%
+        head(10)
+sum_storms_injuries
+```
+```{r}
+storms_melt_injuries = melt(as.data.table(sum_storms_injuries))
+storms_melt_injuries
+```
+
+
+```{r}
+ggplot(storms_melt_injuries, aes(reorder(EVTYPE, -value), value)) +
+        geom_bar(stat = "identity") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        xlab("Event type") +
+        ylab("Count") +
+        facet_wrap( ~ variable,
+                    scales = "free")
+```
+
+```{r fig.width = 14, fig.height=7}
+options(repr.plot.width=18, repr.plot.height=10)
+library(treemapify)
+variable.labs <- c("Total injuries", "Total fatalities")
+names(variable.labs) <- c("TOTINJURIES", "TOTFATALITIES")
+ggplot(storms_melt_injuries, aes(area = value, fill=EVTYPE, label=paste(EVTYPE, value, sep="\n")), leg) +
+        geom_treemap() +
+        geom_treemap_text(colour = "white", place = "centre",
+                    size = 1, grow = TRUE) +
+        theme(legend.position = "none") +
+        facet_grid(~variable,
+                    scales = "free", 
+                    labeller = labeller(variable = variable.labs))
+```
+
+
+
+```{r}
+dmg_storms_crop = storms %>%
+        group_by(EVTYPE) %>%
+        summarise(TOTCROPDMG = sum(CROPDMG),
+                  TOTPROPDMG = sum(PROPDMG)) %>%
+        arrange(-TOTCROPDMG, -TOTPROPDMG) %>%
+        head(10)
+
+# Plot
+storms_melt_crop = melt(as.data.table(dmg_storms_crop))
+
+ggplot(storms_melt_crop, aes(reorder(EVTYPE, -value), value)) +
+        geom_bar(stat = "identity") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        xlab("Event type") +
+        ylab("Damage count") +
+        facet_wrap( ~ variable,
+                    scales = "free")
+```
+```{r}
+sum_storms = storms %>%
+        group_by(EVTYPE) %>%
+        summarise(TOTINJURIES = sum(INJURIES),
+                  TOTFATALITIES = sum(FATALITIES),
+                  TOTCROPDMG = round(sum(CROPDMG)/1000000),
+                  TOTPROPDMG = round(sum(PROPDMG)/1000000))
+```
+
+```{r fig.height=8, fig.width=8}
+
+
+
+# Plot
+
+variable.labs <- c("Total injuries (unit: people)", "Total fatalities (unit: people)", "Total crop damaged", "Total propery damaged")
+names(variable.labs) <- c("TOTINJURIES", "TOTFATALITIES", "TOTCROPDMG", "TOTPROPDMG")
+
+p1 = ggplot(sum_storms, aes(area = TOTINJURIES, fill=EVTYPE, label=paste(EVTYPE, TOTINJURIES, sep="\n"))) +
+        geom_treemap() +
+        geom_treemap_text(colour = "white", place = "centre",
+                    size = 1, grow = TRUE) +
+        
+        theme(legend.position = "none", plot.title = element_text(size = 15, face = "bold")) + 
+        ggtitle("Total Injuries (unit: people)")
+        
+
+p2 = ggplot(sum_storms, aes(area = TOTFATALITIES, fill=EVTYPE, label=paste(EVTYPE, TOTFATALITIES, sep="\n"))) +
+        geom_treemap() +
+        geom_treemap_text(colour = "white", place = "centre",
+                    size = 1, grow = TRUE) +
+        theme(legend.position = "none", plot.title = element_text(size = 15, face = "bold")) + 
+        ggtitle("Total Fatalities (unit: people)") 
+        
+
+p3 = ggplot(sum_storms, aes(area = TOTCROPDMG, fill=EVTYPE, label=paste(EVTYPE, TOTCROPDMG, sep="\n"))) +
+        geom_treemap() +
+        geom_treemap_text(colour = "white", place = "centre",
+                    size = 1, grow = TRUE) +
+        theme(legend.position = "none", plot.title = element_text(size = 15, face = "bold")) + 
+        ggtitle("Total crop damaged (unit: million USD)")
+
+p4 = ggplot(sum_storms, aes(area = TOTPROPDMG, fill=EVTYPE, label=paste(EVTYPE, TOTPROPDMG, sep="\n"))) +
+        geom_treemap() +
+        geom_treemap_text(colour = "white", place = "centre",
+                    size = 1, grow = TRUE) +
+        theme(legend.position = "none", plot.title = element_text(size = 15, face = "bold")) + 
+        ggtitle("Total propery damaged (unit: million USD)")
+
+grid.arrange(p1, p2, p3, p4, nrow=2)  
+```
+```{r}
+sum_yearly_storms = storms %>%
+        group_by(EVTYPE, YEAR = format(BGN_DATE, "%Y")) %>%
+        summarise(TOTINJURIES = sum(INJURIES),
+                  TOTFATALITIES = sum(FATALITIES),
+                  TOTCROPDMG = round(sum(CROPDMG)/1000000),
+                  TOTPROPDMG = round(sum(PROPDMG)/1000000))
+```
+```{r  fig.width=8}
+segment_data = data.frame(x = c(6, 11), xend=c(3, 15.8), y=c(7000, 9000), yend=c(9000, 4500))
+annotate_point_x = c(6, 11)
+annotate_point_y = c(7000, 9000)
+annotate_label = c("Contributed by historical event of\nOctober 1998 Texas Flooding (1).", "1,705 tornadoes were confirmed\nin the US in 2011 (2)")
+
+ggplot(sum_yearly_storms, aes(x = YEAR, y=TOTINJURIES, group=EVTYPE, fill=EVTYPE)) + 
+  geom_area() +
+  theme(legend.position = "none", 
+        axis.title.y=element_blank(), 
+        axis.title.x=element_blank(), 
+        plot.title = element_text(size = 20, face = "bold"), 
+        axis.text = element_text(size = 15), 
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1), 
+        plot.margin = margin(0, 0, 1, 0, "cm")) + 
+  ggtitle("Injuries caused by natural events over 1996-2011") + 
+  geom_segment(
+    data=segment_data,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    inherit.aes = F,
+    lineend = "round", # See available arrow types in example above
+    linejoin = "round",
+    size = 1, 
+    arrow = arrow(length = unit(0.3, "cm")),
+    colour = "lightblue") + # Also accepts "red", "blue' etc 
+  
+  annotate("label", x=annotate_point_x, y=annotate_point_y, label=annotate_label, size = 7)
+```
+
+```{r  fig.width=8}
+segment_data = data.frame(x = c(9), xend=c(4), y=c(825), yend=c(750))
+annotate_point_x = c(9)
+annotate_point_y = c(825)
+annotate_label = c("600 persons died\nin the event of\nExtreme Heat\n in Chicago, 1999 (3)")
+
+ggplot(sum_yearly_storms, aes(x = YEAR, y=TOTFATALITIES, group=EVTYPE, fill=EVTYPE)) + 
+  geom_area()+
+  theme(legend.position = "none", 
+        axis.title.y=element_blank(), 
+        axis.title.x=element_blank(), 
+        plot.title = element_text(size = 20, face = "bold"), 
+        axis.text = element_text(size = 15), 
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1), 
+        plot.margin = margin(0, 0, 1, 0, "cm")) + 
+  ggtitle("Fatalities caused by natural events over 1996-2011") +
+  geom_segment(
+    data=segment_data,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    inherit.aes = F,
+    lineend = "round", # See available arrow types in example above
+    linejoin = "round",
+    size = 1, 
+    arrow = arrow(length = unit(0.3, "cm")),
+    colour = "lightblue") + # Also accepts "red", "blue' etc 
+  
+  annotate("label", x=annotate_point_x, y=annotate_point_y, label=annotate_label, size = 7)
+
+```
+
+```{r  fig.width=8}
+ellipse_data =  data.frame(x = c(3,4,5,5,6,7), y=c(3500,3000,2500,1500,1500,1200))
+segment_data = data.frame(x = c(7), xend=c(5), y=c(4000), yend=c(2500))
+annotate_point_x = c(7)
+annotate_point_y = c(4000)
+annotate_label = c("Historical event of \n1998-2002 Drought (4)")
+sum_yearly_storms %>%
+  mutate(
+    perc = "",
+    perc = if_else(TOTCROPDMG >= 300, paste0(sprintf("%d", TOTCROPDMG)), perc)
+  ) %>% 
+  ggplot(aes(x = YEAR, y=TOTCROPDMG, group=EVTYPE, fill=EVTYPE, color=EVTYPE)) + 
+  geom_bar(stat = "identity")+
+  geom_text(aes(label=perc),
+                     position=position_stack(vjust=0.5), colour="white", size = 5) +
+  theme(legend.position = "none", 
+        axis.title.y=element_blank(), 
+        axis.title.x=element_blank(), 
+        plot.title = element_text(size = 20, face = "bold"), 
+        axis.text = element_text(size = 15), 
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1), 
+        plot.margin = margin(0, 0, 1, 0, "cm")) + 
+  ggtitle("Crop Damaged caused by natural events over 1996-2011 (Mil USD)") + 
+  geom_segment(
+    data=segment_data,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    inherit.aes = F,
+    lineend = "round", # See available arrow types in example above
+    linejoin = "round",
+    size = 1, 
+    arrow = arrow(length = unit(0.3, "cm")),
+    colour = "lightblue") + # Also accepts "red", "blue' etc 
+  annotate("label", x=annotate_point_x, y=annotate_point_y, label=annotate_label, size = 7) +
+  geom_mark_ellipse(data=ellipse_data, aes(x=x, y=y, fill="blue"), inherit.aes = F, tol=1)
+
+```
+
+```{r  fig.width=8}
+segment_data = data.frame(x = c(14,5,5), xend=c(11,10,10), y=c(100000,60000,60000), yend=c(75000,85000,35000))
+annotate_point_x = c(14,5)
+annotate_point_y = c(100000,60000)
+annotate_label = c("Contributed by \nhistorical event of\n Mid-Atlantic \nUnited States flood (5)", "Distributed by\n2005 Atlantic hurricane season-\nthe most active Atlantic hurricane season\n in history until 2020 (6)")
+
+sum_yearly_storms %>%
+mutate(
+    perc = "",
+    perc = if_else(TOTPROPDMG >= 10000, paste0(sprintf("%d", TOTPROPDMG)), perc)
+  ) %>% 
+ggplot(aes(x = YEAR, y=TOTPROPDMG, group=EVTYPE, fill=EVTYPE)) + 
+  geom_bar(stat = "identity")+
+  geom_text(aes(label=perc),
+            position=position_stack(vjust=0.5), 
+            colour="white", size = 2.5) +
+  theme(legend.position = "none", 
+        axis.title.y=element_blank(), 
+        axis.title.x=element_blank(), 
+        plot.title = element_text(size = 20, face = "bold"), 
+        axis.text = element_text(size = 15), 
+        axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1), 
+        plot.margin = margin(0, 0, 1, 0, "cm")) + 
+  ggtitle("Property damaged caused by natural events over 1996-2011 (Mil USD)") +
+  geom_segment(
+    data=segment_data,
+    aes(x = x, y = y, xend = xend, yend = yend),
+    inherit.aes = F,
+    lineend = "round", # See available arrow types in example above
+    linejoin = "round",
+    size = 1, 
+    arrow = arrow(length = unit(0.3, "cm")),
+    colour = "lightblue") + # Also accepts "red", "blue' etc 
+  annotate("label", x=annotate_point_x, y=annotate_point_y, label=annotate_label, size = 6)
+
+```
