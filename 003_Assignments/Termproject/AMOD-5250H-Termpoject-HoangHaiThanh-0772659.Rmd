@@ -1,0 +1,93 @@
+---
+title: "`r strsplit(knitr::current_input(), split='\\.')[[1]][1]`"
+author: "Hoang Hai THanh"
+date: "`r Sys.Date()`"
+output: html_document
+bibliography: citation/references.bib
+csl: citation/ieee.csl
+---
+\tableofcontents
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = '>')
+```
+```{r seed, echo=F}
+set.seed(0772659)
+```
+
+
+```{r}
+library(tidyverse)
+library(recommenderlab)
+library(ggplot2)
+library(caTools)
+```
+
+```{r}
+data("MovieLense")
+movie_lense_matrix <- MovieLense@data
+```
+
+
+```{r}
+rating.data <- movie_lense_matrix
+rating.data[,][rating.data[,]!=0] <- 1
+```
+
+```{r}
+# create the matrix
+movie_lense_matrix_2 <- as(as.matrix(movie_lense_matrix), "binaryRatingMatrix")
+# subset the data
+# subset the dataset
+movies_2 <- movie_lense_matrix_2[rowCounts(MovieLense) > 100, colCounts(MovieLense) > 100]
+```
+
+
+```{r}
+rating.data <- as(as.matrix(rating.data), "binaryRatingMatrix")
+```
+
+
+```{r}
+# create the svd model
+model_svd <- Recommender(rating.data, method="POPULAR", parameter=list(k=64))
+```
+
+```{r}
+library(stringr)
+
+rating.data@data@Dimnames[[1]][str_detect(rating.data@data@Dimnames[[2]], "Batman")]
+```
+```{r}
+rating.data@data@itemInfo$labels[str_detect(rating.data@data@itemInfo$labels, "Ghost")]
+which(str_detect(rating.data@data@itemInfo$labels, "Ghost"))
+
+```
+
+
+
+```{r}
+new_user <- rep(0, 1664)
+new_user[c(148,399,1041,1231)] <- 1
+```
+
+```{r}
+m <- matrix(new_user, 
+            nrow=1, 
+            dimnames=list(users=paste("u", 1, sep=''),
+                          items=rating.data@data@itemInfo$labels))
+```
+
+```{r}
+## coerce it into a binaryRatingMatrix
+b <- as(m, "binaryRatingMatrix")
+b
+```
+
+```{r}
+rec <- predict(model_svd, newdata=b, n = 40)
+```
+
+
+
+
+
