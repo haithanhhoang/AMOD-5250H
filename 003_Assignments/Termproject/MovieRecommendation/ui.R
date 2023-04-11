@@ -3,12 +3,13 @@ library(shiny)
 # Define list_1
 library(recommenderlab)
 library(shinyjs)
+
 data("MovieLense")
 
 # Code for page 1
 fluid.page1 <- fluidPage(
-  titlePanel("Movie recommendation"),
   
+  titlePanel("Movie recommendation"),
   fluidRow(
     column(4, 
            selectizeInput('movie.list', 
@@ -16,6 +17,8 @@ fluid.page1 <- fluidPage(
                           choices = NULL,
                           options = list(placeholder = 'Select interested movies',
                                          searchField = 'title',
+                                         valueField = 'value',
+                                         labelField = c('title'),
                                          render = I("{
                                                       option: function(item, escape) {
                                                         return '<div>' + escape(item.title) +
@@ -25,20 +28,29 @@ fluid.page1 <- fluidPage(
                           multiple = T)
     ),
     column(4,
-           h4("Selected movies:"),
-           tableOutput('table')
-    ),
-    column(4,
-           numericInput(
+           sliderInput(
              'top.n', 
              'Choose number of recommendations', 
-             value = 10, 
+             value = 20, 
              min = 5,
              max = 40,
              step = 5
            ),
+           radioButtons(inputId = 'recommend.method',
+                        label='What would you prefer to base recommendation on?',
+                        choices = c("Users with the same taste as your." = "UBCF",
+                                    "Movies that similar to your selected ones." = "IBCF",
+                                    "Popular movies that you might have not seen." = "POPULAR",
+                                    "Based on all of above." = "HYBRID"
+                                    )),
            actionButton("generate.recommend", 
-                         "Generate Recommend"),
+                        "Generate Recommend")
+    ),
+    column(4,
+           div(p("Your movie recommendation")),
+           div(style='overflow-x: hidden;height:400px;overflow-y: scroll;',
+               htmlOutput('recommend.list')
+           )
     )
   )
 )
@@ -54,7 +66,8 @@ fluid.page2 <- fluidPage(
                           choices = NULL,
                           options = list(placeholder = 'Select interested movies',
                                          searchField = 'title',
-                                         
+                                         valueField = 'value',
+                                         labelField = c('title'),
                                          render = I("{
                                                       option: function(item, escape) {
                                                         return '<div>' + escape(item.title) +
@@ -63,7 +76,7 @@ fluid.page2 <- fluidPage(
                                                     }")),
                           multiple = F)
     ),
-    column(6, align="center",
+    column(5, align="center",
            htmlOutput('movie.detail.poster'),
            h3(textOutput('movie.detail.title')),
            div(align="left",
@@ -73,7 +86,8 @@ fluid.page2 <- fluidPage(
                textOutput('movie.detail.genres'))
            
     ),
-    column(3, align="left", 
+    column(4, align="left", 
+           div(p("Similar movies")),
            div(style='overflow-x: hidden;height:500px;overflow-y: scroll;',
                htmlOutput('movie.10.nearest')
                )
@@ -83,10 +97,14 @@ fluid.page2 <- fluidPage(
 
 # Define UI
 ui <- navbarPage("Movie Recommendation",
+                 id = 'mainPage',
                  useShinyjs(),
-                 includeScript("../resource/jquery-3.6.4.min.js"),
-                 includeScript("../resource/myscript.js"),
+                 includeScript("resource/jquery-3.6.4.min.js"),
+                 includeScript("resource/myscript.js"),
                  tabPanel("Recommendation",
+                          value = 'panel1',
                           fluid.page1),
-                 tabPanel("Movie detail", fluid.page2)
+                 tabPanel("Movie detail", 
+                          value = 'panel2',
+                          fluid.page2)
                  )
