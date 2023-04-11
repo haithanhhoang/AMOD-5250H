@@ -1,91 +1,316 @@
 ---
-title: "`r strsplit(knitr::current_input(), split='\\.')[[1]][1]`"
+title: "Movie recommender application"
+subtitle: "`r strsplit(knitr::current_input(), split='\\.')[[1]][1]`"
 author: "Hoang Hai THanh"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: 
+    number_sections: true
+  html_document: default
 bibliography: citation/references.bib
 csl: citation/ieee.csl
 ---
 \tableofcontents
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = '>')
+knitr::opts_chunk$set(echo = TRUE, comment = '>', out.width = "400px")
 ```
 ```{r seed, echo=F}
 set.seed(0772659)
 ```
 
+\pagebreak
 
-```{r}
-library(tidyverse)
-library(recommenderlab)
-library(ggplot2)
-library(caTools)
+# Introduction
+
+In today's digital age, movie streaming services offer their users a vast library of movies. However, the abundance of choices often leads to indecisiveness and a time-consuming browsing experience. In addition, users may need help choosing a movie that aligns with their interests and preferences, leading to frustration and dissatisfaction with the movie-watching experience.
+
+To address the above issue, we propose a movie recommendation application that utilizes advanced algorithms based on item-based and user-based collaborative filtering. Collaborative filtering techniques enable our application to analyze the user's previous movie-watching behaviour and preferences to recommend movies most likely to interest them.
+
+User-based collaborative filtering works by identifying other users with similar movie preferences to the user and recommending movies they have enjoyed. On the other hand, item-based collaborative filtering works by analyzing the similarities between different movies and recommending movies similar to the ones the user has already watched and enjoyed.
+
+Our application combines these techniques to provide users with personalized recommendations that cater to their tastes and preferences. Furthermore, by utilizing collaborative filtering, our application helps users overcome the challenge of browsing through an extensive movie library and ensures a satisfying movie-watching experience.
+
+# Background
+
+Recommender systems [@resnick1997recommender] are a type of information filtering system that provides personalized recommendations to users based on their preferences and past behavior. They are widely used in various applications, including e-commerce, social networks, and entertainment platforms. In recent years, the development of recommender systems has been driven by advances in machine learning and data mining, as well as the increasing availability of large-scale user data.
+
+Collaborative filtering (CF)[@su2009survey] is a widely used technique in recommender systems that leverages the similarities between users and/or items to provide personalized recommendations. There are two main approaches to CF: user-based and item-based. User-based CF predicts a user's preferences based on the preferences of similar users, while item-based CF predicts a user's preferences based on the similarity of items they have interacted with.
+
+User-based CF[@wang2006unifying] algorithms typically involve calculating similarity between users based on their past item interactions. Similar users are identified by computing the cosine similarity between their item vectors, where each entry in the vector corresponds to a rating or interaction with a particular item. Once similar users are identified, the algorithm recommends items that have been rated highly by these users but not by the target user.
+
+Item-based CF[@sarwar2001item] algorithms, on the other hand, identify similar items based on the overlap of users who have interacted with them. The similarity between items is computed by comparing the sets of users who have interacted with each item. Once similar items are identified, the algorithm recommends items that are similar to those that the target user has rated highly.
+
+Both user-based and item-based CF have been widely studied in the literature, and several variants of these algorithms have been proposed to improve their performance. One common variant is the use of neighborhood-based approaches, such as k-nearest neighbors [@keller1985fuzzy], to identify similar users or items. Another variant is the use of matrix factorization techniques[@koren2009matrix], such as singular value decomposition (SVD)[@kalman1996singularly], to reduce the dimensionality of the user-item interaction matrix and to learn latent factors that capture the underlying preferences of users and items.
+
+User-based and item-based CF have been applied in various domains, including e-commerce[@huang2007comparison], social networks[@kautz1997referral], and online advertising[@vargiu2013exploiting]. They have shown to be effective in improving user engagement and satisfaction, and have also been used to drive business revenue by increasing sales and customer retention.
+
+However, both approaches have some limitations. One of the main limitations of user-based CF is the scalability problem, where the computation of user similarity becomes computationally expensive as the number of users and items in the system grows. Item-based CF, on the other hand, suffers from the sparsity problem, where the similarity between items cannot be computed for items that have not been interacted with by any user.
+
+To address these limitations, hybrid CF[@ccano2017hybrid] approaches have been proposed that combine both user-based and item-based CF, as well as other recommendation techniques such as content-based filtering or knowledge-based recommendation. Hybrid approaches can improve the performance of CF by leveraging the strengths of different techniques and mitigating their weaknesses.
+
+In conclusion, user-based and item-based CF are important techniques in recommender systems that have been extensively studied in the literature. Ongoing research is focused on developing more accurate and efficient CF algorithms, as well as addressing ethical and fairness considerations.
+
+## Recommender algorithms used in the prototype
+
+First of all, let's define some notations used in this report. Let $R = {r_1, r_2, ..., r_N}$ be the set of $N$ users, $C = {c_1, c_2, ..., c_M}$ be the set of $M$ items (items in the prototype are the movies). We use  matrix $I = (i_{nm})_{N \times M}$ to store data about interaction between users and items, where $i_{nm} = 1$ denotes $n$-th user had interaction (saw, clicked, liked, etc.) with $m$-th item, while $i_{nm} = 0$ might mean either 1) missing data or 2) $n$-th user had no interaction with $c$-th item. For an active user $r_a \in R$, we define the set of unknown items to user $u_a$ as $C_a = C  \backslash \{c_l \in C | i_{al} = 1\}$. 
+
+
+### Popular items
+
+This is a non-personalized recommender stragedy that recommends to the users the most popular items they have no interaction with.
+
+### Collaborative filtering
+
+Collaborative filtering is algorithm that predicts or recommends about user's preferences based on their past behavior, such as item ratings or purchase histories. 
+
+There are two categories of collaborative filtering algorithms: memory-based CF and model-based CF algorithms, as classified by Breese et al. (1998) [@10.5555/2074094.2074100]. Memory-based CF algorithms utilize the entire user database, or at least a significant sample of it, to generate recommendations. The user-based collaborative filtering algorithm is the most widely used memory-based CF algorithm. However, this approach is not very scalable since the entire user database must be processed in real-time to create recommendations. Meanwhile, algorithms based on models utilize the user database for acquiring knowledge of a more condensed model such as clusters containing users who have similar preferences. This model is then employed to generate recommendations.
+
+#### User-base
+
+User-base CF is a popular memory-based algorithm used in recommender systems. It works base on the assumption that users with the near preferences would interact similarly with new items. Consequently, it is possible to make predictions for missing data of a user by initially identifying a group of users (or *neighborhood*) with the same interests and subsequently consolidating their interactions to calculate a prediction.
+
+The neighborhood is defined in terms of similarity between users, by taking a given number of most similar users (k nearest neighbors, or *knn*). One of the most popular similarity measures for CF are the Pearson correlation coefficient and the Cosine similarity, which are defined as:
+$$
+m_{Pearson}(x,y) = 
+\frac{1}{n-1}
+\sum_{l=1}^{n}
+\left(\frac{x_l-\bar{x}}{s_x} \right)
+\left(\frac{y_l-\bar{y}}{s_y} \right)
+$$
+
+and
+
+$$
+m_{Cosine}(x,y) = \frac{x \cdot y}{\|x\|\|y\|}
+$$
+To calculate the similarity between two users $x$ and $y$, we use calculate $m_{Pearson}(r_x, r_y)$ or $m_{Cosine}(r_x, r_y)$ where $(r_x, r_y)$ are x-th and y-th row of matrix $R$, representing user x and y.
+
+Once the similarities between users are populated, we can find $k$ neighborhood of an active user $u_a$, $N(a)$ by taking $k$ nearest neighbors. Then, we can use the interaction data of the neighborhood to predict interaction for the active user $u_a$ as:
+
+$$
+\hat{i}_{am} = \frac{1}{\sum_{n \in N(a)}s_{am}}\sum_{n \in N(a)}s_{am}i_{nm}
+$$
+
+where $s_{am}$ is the similarity coefficient between user $a$ and user $m$.
+
+#### Item-base
+
+Item-based CF, as described in [@10.1145/371920.372071], is a model-driven technique for generating recommendations. It works by analyzing the rating matrix to identify connections between different items, and assumes that users tend to favor items that share similarities with those they have already enjoyed.
+
+In this method, instead of calculating similarity between users, we would calculate similarity between items. To keep the model size optimal, for each item we find $k$ most similar items and their similarity and store them to a $n \times k$ matrix.
+
+To calculate prediction on interaction of user $u_a$, we use the following formula:
+
+$$
+\hat{i}_{am} = \frac{1}{\sum_{i \in S(m)}s_{mi}}\sum_{i \in S(m)}s_{mi}i_{ai}
+$$
+Where $S(m)$ is the item $m$'s set of the $k$ most similar items, and $s_{mi}$ is the similarity coefficient between item $m$ and item $i$.
+
+### Hybrid recommendation
+
+Hybrid recommendation is the strategy that aggregates the recommendations of several algorithms to make the final recommendation to the users.
+
+In this prototype, we created hybrid recommender by aggregating recommendations from a popular-item model, an item-based CF model and an user-based CF model, then recommend the top $k$ items to the user.
+
+\pagebreak
+
+# Instruction
+
+## Getting started
+
+### Run from pre-installed application
+
+The application is available at the following URL and can be accessed via most of the popular web browsers:
+
+    https://haithanhhoang.shinyapps.io/MovieRecommendation/
+
+### Run from sourcecode
+
+#### Prerequisites
+
+The following softwares and modules are required:
+
+- git: Installation manual is available at [Installing Git]( https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- R: Installation manual is available at https://cran.r-project.org/
+- R modules:
+  - [shiny](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/)
+  - [recommenderlab](https://cran.r-project.org/web/packages/recommenderlab/index.html)
+  - [shinyjs](https://cran.r-project.org/web/packages/shinyjs/index.html)
+  
+#### Download the sourcecode
+
+1. Open git bash
+2. Run following commands in the git bash:
+    * Navigate to desired parent folder:
+    
+        ```
+        cd [path/to/parent/folder]
+        ```
+    * Download sourcecode
+    
+        ```
+        git clone -n -b termproject  --depth=1 --filter=tree:0 \
+          https://github.com/haithanhhoang/AMOD-5250H 
+          
+        cd AMOD-5250H
+        git sparse-checkout set --no-cone 003_Assignments/Termproject/MovieRecommendation
+        git checkout
+        ```
+
+#### Run the application
+
+1. Open R console
+2. Run following commands in the R console
+    * Navigate to Application folder
+    
+        ```
+        setwd([path/to/parent/folder]/AMOD-5250H/003_Assignments/Termproject/)
+        ```
+    * Run the application
+    
+        ```
+        library(shiny)
+        
+        # Run application at port 6901, you can change port number as you wish
+        runApp('MovieRecommendation', port = 6901)
+        ```
+    * Access the application
+        If the application is initiated successfully, it should be accessed by entering the following address in the internet browser:
+        
+        ```
+        http://localhost:6901
+        ```
+        
+        The homepage of the application is as follow:
+        
+        ```{r, echo=F, fig.align='center'}
+        homepage.path <- 'MovieRecommendation/resource/images/homepage.png'
+        knitr::include_graphics(homepage.path)
+        
+        ```
+        
+## Generate recommendation
+
+To Generate recommendation, users need to proceed the following steps:
+
+1. Choose the movies that the user has interested in.
+2. Choose the number of recommendation to generate
+3. Select the recommend stragedy
+4. Generate the recommendation
+
+### Choosing movies
+
+To choose the movie, users operate as follow:
+
+1. Navigate to the "Recommendation" tab under the home page
+
+    ```{r, echo=F, fig.align='center'}
+            homepage.path <- 'MovieRecommendation/resource/images/movie_select_1.png'
+            knitr::include_graphics(homepage.path)
+            
+    ```
+2. Click on the text input area under the "Choose movies you have seen" label to view the movie list.
+
+    ```{r, echo=F, fig.align='center'}
+            homepage.path <- 'MovieRecommendation/resource/images/movie_select_2.png'
+            knitr::include_graphics(homepage.path)
+            
+    ```
+    
+3. Select movies that the user has interested in. The user can choose multiple movies. To find the movie by its title, the user can input text to the field to filter the listas shown in the picture.
+
+    ```{r, echo=F, fig.align='center'}
+            homepage.path <- 'MovieRecommendation/resource/images/movie_select_3.png'
+            knitr::include_graphics(homepage.path)
+            
+    ```
+
+### Choose number of recommendation
+
+Users can adjust the slider to choose the number of movies to be recommended. For example, to generate recommendation that includes 30 movies, a user can set the slider as follow:
+
+```{r, echo=F, fig.align='center'}
+        homepage.path <- 'MovieRecommendation/resource/images/choose_number.png'
+        knitr::include_graphics(homepage.path)
+        
+```
+    
+### Select recommend algorithm
+
+To select recommend algorithm, users can select one of the four option under "What would you prefer to base recommendation on?" label.
+
+1. The first option will generate recommendation using user-based strategy.
+2. The second option will generate recommendation using item-based strategy.
+3. The third option will generate recommendation using popular-item strategy.
+4. The fourth option will generate recommendation using hybrid strategy.
+
+```{r, echo=F, fig.align='center'}
+        homepage.path <- 'MovieRecommendation/resource/images/choose_algorithm.png'
+        knitr::include_graphics(homepage.path)
+        
 ```
 
-```{r}
-data("MovieLense")
-movie_lense_matrix <- MovieLense@data
+
+### Generate and browse the recomendation
+
+After finish all the steps above, users can click the button "Generate Recommend" to generate recommendation. The list of movie that are recommended will be shown on the right area as follow:
+
+
+```{r, echo=F, fig.align='center'}
+        homepage.path <- 'MovieRecommendation/resource/images/generate_recommendation.png'
+        knitr::include_graphics(homepage.path)
+        
 ```
 
+Users can click on the image or name of the movie to see the movie's details. The movie detail page will be described in the next section.
 
-```{r}
-rating.data <- movie_lense_matrix
-rating.data[,][rating.data[,]!=0] <- 1
+## View movie details
+
+### Navigate to movie detail page
+Users can access movie detail page by one of the following method:
+1. Select movie to see detail by selection menu.
+2. Click on a movie poster image or name.
+
+#### Using selection menu
+
+To see a movie detail information by using the selection menu, users proceed as follow:
+
+1. Navigate to the "Movie detail" tab under the home page
+
+    ```{r, echo=F, fig.align='center'}
+            homepage.path <- 'MovieRecommendation/resource/images/detail_movie_select_1.png'
+            knitr::include_graphics(homepage.path)
+            
+    ```
+2. Click on the selection input area under the "Choose a movie" label to view the movie list.
+
+    ```{r, echo=F, fig.align='center'}
+            homepage.path <- 'MovieRecommendation/resource/images/detail_movie_select_2.png'
+            knitr::include_graphics(homepage.path)
+            
+    ```
+    
+#### Click on movie poster image or name
+
+Users can click on the image or name of the movie to see the movie's details.
+
+```{r, echo=F, fig.align='center', out.width="200px"}
+        homepage.path <- 'MovieRecommendation/resource/images/detail_movie_select_3.png'
+        knitr::include_graphics(homepage.path)
+        
 ```
+    
+### Browse movie's information
 
-```{r}
-# create the matrix
-movie_lense_matrix_2 <- as(as.matrix(movie_lense_matrix), "binaryRatingMatrix")
-# subset the data
-# subset the dataset
-movies_2 <- movie_lense_matrix_2[rowCounts(MovieLense) > 100, colCounts(MovieLense) > 100]
-```
+The movie detail page includes:
 
+1. Title
+2. Poster image
+3. IMDB url
+4. Genre(s)
+5. Similar movies (top 10 most similar movies generated by item-based model)
 
-```{r}
-rating.data <- as(as.matrix(rating.data), "binaryRatingMatrix")
-```
-
-
-```{r}
-# create the svd model
-model_svd <- Recommender(rating.data, method="POPULAR", parameter=list(k=64))
-```
-
-```{r}
-library(stringr)
-
-rating.data@data@Dimnames[[1]][str_detect(rating.data@data@Dimnames[[2]], "Batman")]
-```
-```{r}
-rating.data@data@itemInfo$labels[str_detect(rating.data@data@itemInfo$labels, "Ghost")]
-which(str_detect(rating.data@data@itemInfo$labels, "Ghost"))
-
-```
-
-
-
-```{r}
-new_user <- rep(0, 1664)
-new_user[c(148,399,1041,1231)] <- 1
-```
-
-```{r}
-m <- matrix(new_user, 
-            nrow=1, 
-            dimnames=list(users=paste("u", 1, sep=''),
-                          items=rating.data@data@itemInfo$labels))
-```
-
-```{r}
-## coerce it into a binaryRatingMatrix
-b <- as(m, "binaryRatingMatrix")
-b
-```
-
-```{r}
-rec <- predict(model_svd, newdata=b, n = 40)
-```
+# Bibliography
 
 
 

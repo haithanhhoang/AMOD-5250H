@@ -62,7 +62,7 @@ fluid.page2 <- fluidPage(
   fluidRow(
     column(3, 
            selectizeInput('movie.detail.select', 
-                          'Choose movies you have seen', 
+                          'Select a movie', 
                           choices = NULL,
                           options = list(placeholder = 'Select interested movies',
                                          searchField = 'title',
