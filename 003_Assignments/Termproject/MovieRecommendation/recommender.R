@@ -63,6 +63,5 @@ get.recommendation <- function(model, # model used to generate recommend
   
   # Remove all NAs
   rec <- rec[!is.na(rec)]
-  print(rec)
   return(rec)
 }
