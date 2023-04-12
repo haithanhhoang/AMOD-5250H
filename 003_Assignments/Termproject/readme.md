@@ -70,7 +70,7 @@ The following softwares and modules are required:
         
         <img src="MovieRecommendation/resource/images/homepage.png"
          alt="Markdown Monster icon"
-         style="float: center; width: 400px;" />
+         style="float: center; width: 600px;" />
         
 ## Generate recommendation
 
@@ -89,19 +89,19 @@ To choose the movie, users operate as follow:
     
     <img src="MovieRecommendation/resource/images/movie_select_1.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
      
 2. Click on the text input area under the "Choose movies you have seen" label to view the movie list.
 
     <img src="MovieRecommendation/resource/images/movie_select_2.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
     
 3. Select movies that the user has interested in. The user can choose multiple movies. To find the movie by its title, the user can input text to the field to filter the list as shown in the picture.
 
     <img src="MovieRecommendation/resource/images/movie_select_3.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
 
 ### Choose number of recommendation
 
@@ -122,7 +122,7 @@ To select recommend algorithm, users can select one of the four options under "W
 
 <img src="MovieRecommendation/resource/images/choose_algorithm.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
 
 
 ### Generate and browse the recomendation
@@ -131,7 +131,7 @@ After finish all the steps above, users can click the button "Generate Recommend
 
 <img src="MovieRecommendation/resource/images/generate_recommendation.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
 
 Users can click on the image or name of the movie to see the movie's details. The movie detail page will be described in the next section.
 
@@ -151,12 +151,12 @@ To see a movie detail information by using the selection menu, users proceed as 
 
     <img src="MovieRecommendation/resource/images/detail_movie_select_1.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
 2. Click on the selection input area under the "Select a movie" label to view the movie list.
 
     <img src="MovieRecommendation/resource/images/detail_movie_select_2.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 400px;" />
+     style="float: center; width: 600px;" />
     
 #### Click on movie poster image or name
 
@@ -165,7 +165,7 @@ Users can click on the image or name of the movie to see the movie's details.
 
 <img src="MovieRecommendation/resource/images/detail_movie_select_3.png"
      alt="Markdown Monster icon"
-     style="float: center; width: 200px;" />
+     style="float: center; width: 300px;" />
     
 ### Browse movie's information
 
