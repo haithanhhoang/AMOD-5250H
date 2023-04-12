@@ -68,11 +68,9 @@ The following softwares and modules are required:
         
         The homepage of the application is as follow:
         
-        ```{r, echo=F, fig.align='center'}
-        homepage.path <- 'MovieRecommendation/resource/images/homepage.png'
-        knitr::include_graphics(homepage.path)
-        
-        ```
+        <img src="MovieRecommendation/resource/images/homepage.png"
+         alt="Markdown Monster icon"
+         style="float: center; width: 400px;" />
         
 ## Generate recommendation
 
