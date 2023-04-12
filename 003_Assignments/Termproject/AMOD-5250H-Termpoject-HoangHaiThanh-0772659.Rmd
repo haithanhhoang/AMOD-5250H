@@ -30,6 +30,8 @@ User-based collaborative filtering works by identifying other users with similar
 
 Our application combines these techniques to provide users with personalized recommendations that cater to their tastes and preferences. Furthermore, by utilizing collaborative filtering, our application helps users overcome the challenge of browsing through an extensive movie library and ensures a satisfying movie-watching experience.
 
+The data used in this application was extracted from MovieLens 100K Dataset[@10.1145/2827872], which was collected by the GroupLens Research Project at the University of Minnesota throught the MovieLens website (movielens.umn.edu) during the seven-month period from September 19th, 1997 through April 22nd, 1998.
+
 # Background
 
 Recommender systems [@resnick1997recommender] are a type of information filtering system that provides personalized recommendations to users based on their preferences and past behavior. They are widely used in various applications, including e-commerce, social networks, and entertainment platforms. In recent years, the development of recommender systems has been driven by advances in machine learning and data mining, as well as the increasing availability of large-scale user data.

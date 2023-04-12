@@ -6,11 +6,12 @@ library(shinyjs)
 
 data("MovieLense")
 
-# Code for page 1
+# Code for tabpanel 1 ("Recommender")
 fluid.page1 <- fluidPage(
   
   titlePanel("Movie recommendation"),
   fluidRow(
+    # Movie search and select input
     column(4, 
            selectizeInput('movie.list', 
                           'Choose movies you have seen', 
@@ -27,6 +28,7 @@ fluid.page1 <- fluidPage(
                                                     }")),
                           multiple = T)
     ),
+    # Slider for recommendation number selection
     column(4,
            sliderInput(
              'top.n', 
@@ -46,6 +48,7 @@ fluid.page1 <- fluidPage(
            actionButton("generate.recommend", 
                         "Generate Recommend")
     ),
+    # Component for showing recommendation
     column(4,
            div(p("Your movie recommendation")),
            div(style='overflow-x: hidden;height:400px;overflow-y: scroll;',
@@ -55,11 +58,12 @@ fluid.page1 <- fluidPage(
   )
 )
 
-# Code for page 2
+# Code for tabpanel 2 ("Movie detail")
 fluid.page2 <- fluidPage(
   titlePanel("Movie details"),
   
   fluidRow(
+    # Search and select movie
     column(3, 
            selectizeInput('movie.detail.select', 
                           'Select a movie', 
@@ -76,6 +80,7 @@ fluid.page2 <- fluidPage(
                                                     }")),
                           multiple = F)
     ),
+    # Area for showing movie details
     column(5, align="center",
            htmlOutput('movie.detail.poster'),
            h3(textOutput('movie.detail.title')),
@@ -86,6 +91,7 @@ fluid.page2 <- fluidPage(
                textOutput('movie.detail.genres'))
            
     ),
+    # Top 10 nearest movies
     column(4, align="left", 
            div(p("Similar movies")),
            div(style='overflow-x: hidden;height:500px;overflow-y: scroll;',

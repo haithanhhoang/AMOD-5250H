@@ -157,6 +157,8 @@ server <- function(input, output, session) {
       
       
     }else{
+      # Show error message when user click on submit button without
+      # selecting movies
       recommend.list$html <- '<div style="color:red"> 
                               Please select some movies you have seen first
                               </div>'
@@ -185,14 +187,16 @@ server <- function(input, output, session) {
   
   ## Handle event that user change movie on detail panel
   observeEvent(input$movie.detail.select, {
-
+    
+    # Fetch movie information
     movie <- as.vector(movie.data[movie.data["value"] == input$movie.detail.select,])
     movie.detail$title <- movie[["title"]]
     movie.detail$poster.url <- movie[["poster_url"]]
     movie.detail$url <- movie[["url"]]
     movie.detail$genres <- genres[which(movie[5:22]==1)]
     index <- movie[["value"]]
-
+    
+    # Fetch 10 nearest neighbor of the selected movie
     if(is.integer(index)){
 
       log_info('Get top 10 nearest movies for id {index}')
@@ -201,12 +205,13 @@ server <- function(input, output, session) {
     }
   })
   
+  # Selected movie in page 1
   output$table <- renderTable({
       sort(movie.data[input$movie.list, "title"])
   }, colnames = F, )
   
   
-  
+  # Render movie information
   output$movie.detail.title <- renderText(movie.detail$title)
   output$movie.detail.poster <- renderText({c('<img src="', 
                                               movie.detail$poster.url, 

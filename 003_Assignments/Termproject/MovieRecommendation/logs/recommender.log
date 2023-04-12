@@ -2269,3 +2269,50 @@ INFO [2023-04-10 10:40:06]
 INFO [2023-04-10 10:40:09] Get top 10 nearest movies for id 1
 INFO [2023-04-10 10:40:09] 
 INFO [2023-04-10 10:40:12] Get top 10 nearest movies for id 1
+INFO [2023-04-11 16:28:09] Get IBCF recommender.
+INFO [2023-04-11 16:28:09] Attempt to load model from recommender/model_ibcf.rds
+INFO [2023-04-11 16:28:09] Loaded model from file!
+INFO [2023-04-11 16:28:09] Loaded IBCF model.
+INFO [2023-04-11 16:28:09] Get POPULAR recommender.
+INFO [2023-04-11 16:28:09] Attempt to load model from recommender/model_popular.rds
+INFO [2023-04-11 16:28:09] Loaded model from file!
+INFO [2023-04-11 16:28:09] Loaded POPULAR model.
+INFO [2023-04-11 16:28:09] Get UBCF recommender.
+INFO [2023-04-11 16:28:09] Attempt to load model from recommender/model_ubcf.rds
+INFO [2023-04-11 16:28:09] Loaded model from file!
+INFO [2023-04-11 16:28:09] Loaded UBCF model.
+INFO [2023-04-11 16:28:09] Created Hybrid model.
+INFO [2023-04-11 16:28:09] 
+INFO [2023-04-11 16:54:10] Get IBCF recommender.
+INFO [2023-04-11 16:54:10] Attempt to load model from recommender/model_ibcf.rds
+INFO [2023-04-11 16:54:10] Loaded model from file!
+INFO [2023-04-11 16:54:10] Loaded IBCF model.
+INFO [2023-04-11 16:54:10] Get POPULAR recommender.
+INFO [2023-04-11 16:54:10] Attempt to load model from recommender/model_popular.rds
+INFO [2023-04-11 16:54:10] Loaded model from file!
+INFO [2023-04-11 16:54:10] Loaded POPULAR model.
+INFO [2023-04-11 16:54:10] Get UBCF recommender.
+INFO [2023-04-11 16:54:10] Attempt to load model from recommender/model_ubcf.rds
+INFO [2023-04-11 16:54:10] Loaded model from file!
+INFO [2023-04-11 16:54:10] Loaded UBCF model.
+INFO [2023-04-11 16:54:10] Created Hybrid model.
+INFO [2023-04-11 16:54:11] 
+INFO [2023-04-11 16:54:13] Get top 10 nearest movies for id 1
+INFO [2023-04-11 17:58:43] Get IBCF recommender.
+INFO [2023-04-11 17:58:43] Attempt to load model from recommender/model_ibcf.rds
+INFO [2023-04-11 17:58:43] Loaded model from file!
+INFO [2023-04-11 17:58:43] Loaded IBCF model.
+INFO [2023-04-11 17:58:43] Get POPULAR recommender.
+INFO [2023-04-11 17:58:43] Attempt to load model from recommender/model_popular.rds
+INFO [2023-04-11 17:58:43] Loaded model from file!
+INFO [2023-04-11 17:58:43] Loaded POPULAR model.
+INFO [2023-04-11 17:58:43] Get UBCF recommender.
+INFO [2023-04-11 17:58:43] Attempt to load model from recommender/model_ubcf.rds
+INFO [2023-04-11 17:58:43] Loaded model from file!
+INFO [2023-04-11 17:58:43] Loaded UBCF model.
+INFO [2023-04-11 17:58:43] Created Hybrid model.
+INFO [2023-04-11 17:58:43] 
+INFO [2023-04-11 17:58:46] Get top 10 nearest movies for id 1
+INFO [2023-04-11 17:58:49] 
+INFO [2023-04-11 17:58:52] Get top 10 nearest movies for id 1
+INFO [2023-04-11 18:24:55] 
