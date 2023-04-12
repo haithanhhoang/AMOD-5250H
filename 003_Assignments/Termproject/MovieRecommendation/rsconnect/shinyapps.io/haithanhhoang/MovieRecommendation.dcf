@@ -1,0 +1,14 @@
+name: MovieRecommendation
+title: MovieRecommendation
+username:
+account: haithanhhoang
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 8808043
+bundleId: 7077441
+url: https://haithanhhoang.shinyapps.io/MovieRecommendation/
+when: 1681251807.20961
+lastSyncTime: 1681251807.20962
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: logs/recommender.log
